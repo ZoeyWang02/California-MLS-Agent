@@ -16,7 +16,7 @@ const TYPE_MAP: Record<string, string> = {
 
 export function parsePropertyQuery(query: string): PropertyFilters {
   const cityMatch = query.match(/in ([A-Za-z\s]+?)(?:\s+under|\s+with|\s+at|\s+below|$)/i);
-  const priceMatch = query.match(/under \$?([\d,.]+)(k|m)?/i);
+  const priceMatch = query.match(/under \$?([\d,.]+)\s*(thousand|million|k|m)?/i);
   const bedsMatch = query.match(/(\d+)[\s-]*(bed|beds|bedroom|bedrooms)/i);
   const bathsMatch = query.match(/(\d+(?:\.5)?)[\s-]*(bath|baths|bathroom)/i);
   const sqftMatch = query.match(/([\d,]+)\s*(?:sqft|sq ft|square feet)/i);
@@ -29,8 +29,9 @@ export function parsePropertyQuery(query: string): PropertyFilters {
   let maxPrice: number | undefined;
   if (priceMatch) {
     maxPrice = Number(priceMatch[1].replace(/,/g, ""));
-    if (priceMatch[2]?.toLowerCase() === "k") maxPrice *= 1_000;
-    if (priceMatch[2]?.toLowerCase() === "m") maxPrice *= 1_000_000;
+    const suffix = priceMatch[2]?.toLowerCase();
+    if (suffix === "k" || suffix === "thousand") maxPrice *= 1_000;
+    if (suffix === "m" || suffix === "million") maxPrice *= 1_000_000;
   }
 
   return {

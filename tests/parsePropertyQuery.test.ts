@@ -80,3 +80,15 @@ test("k suffix price", () => {
   assert.equal(f.city, "Fresno");
   assert.equal(f.maxPrice, 650_000);
 });
+
+test("word-form million suffix", () => {
+  const f = parsePropertyQuery("homes in Irvine under 1.2 million");
+  assert.equal(f.city, "Irvine");
+  assert.equal(f.maxPrice, 1_200_000);
+});
+
+test("word-form thousand suffix", () => {
+  const f = parsePropertyQuery("homes in Fresno under 650 thousand");
+  assert.equal(f.city, "Fresno");
+  assert.equal(f.maxPrice, 650_000);
+});

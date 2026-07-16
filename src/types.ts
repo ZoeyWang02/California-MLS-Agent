@@ -42,6 +42,14 @@ export interface ListingRow {
   ListOfficeName: string;
 }
 
+// Week 4 conversational state: structured, deterministic slots the code
+// checks directly (if (!session.maxPrice) ask for budget) - not OpenClaw's
+// own conversational memory. Keyed by userId in the session store.
+export interface UserSession extends PropertyFilters {
+  lastResults?: ListingRow[];
+  conversationStep: number;
+}
+
 export interface SoldRow {
   ListingKey: number;
   UnparsedAddress: string;
