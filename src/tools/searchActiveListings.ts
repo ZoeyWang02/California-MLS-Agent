@@ -1,17 +1,20 @@
 import { query } from "../db.js";
 import type { ListingRow, PropertyFilters } from "../types.js";
 
+// Week 3
 export async function searchActiveListings(filters: PropertyFilters, page = 1, limit = 10) {
   const offset = (page - 1) * limit;
   let sql = `
     SELECT
-      L_ListingID, L_DisplayId, L_Address, L_City, L_Zip,
-      L_SystemPrice AS price, L_Keyword2 AS beds, LM_Dec_3 AS baths,
-      LM_Int2_3 AS sqft, L_Type_ AS type, L_Status AS status,
-      LMD_MP_Latitude AS lat, LMD_MP_Longitude AS lng,
+      L_ListingID AS ListingKey, L_DisplayId,
+      L_Address AS UnparsedAddress, L_City AS City, L_Zip AS PostalCode,
+      L_SystemPrice AS ListPrice, L_Keyword2 AS BedroomsTotal, LM_Dec_3 AS BathroomsTotalInteger,
+      LM_Int2_3 AS LivingArea, L_Type_ AS PropertySubType, L_Status AS MlsStatus,
+      LMD_MP_Latitude AS Latitude, LMD_MP_Longitude AS Longitude,
       YearBuilt, AssociationFee, DaysOnMarket,
-      PoolPrivateYN, ViewYN, FireplaceYN, PhotoCount,
-      LA1_UserFirstName, LA1_UserLastName, LO1_OrganizationName
+      PoolPrivateYN, ViewYN, FireplaceYN, PhotoCount AS PhotosCount,
+      LA1_UserFirstName AS ListAgentFirstName, LA1_UserLastName AS ListAgentLastName,
+      LO1_OrganizationName AS ListOfficeName
     FROM rets_property WHERE L_Status = "Active"
   `;
   const params: any[] = [];

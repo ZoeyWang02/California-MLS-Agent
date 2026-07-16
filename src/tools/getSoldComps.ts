@@ -1,6 +1,7 @@
 import { query } from "../db.js";
 import type { SoldRow } from "../types.js";
 
+// Week 3
 export async function getSoldComps(city: string, months = 12) {
   const sql = `
     SELECT

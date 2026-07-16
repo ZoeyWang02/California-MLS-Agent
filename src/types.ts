@@ -13,30 +13,33 @@ export interface PropertyFilters {
   maxHoa?: number;
 }
 
+// Field names follow the RETS-to-RESO mapping (L_ListingID -> ListingKey,
+// L_Address -> UnparsedAddress, L_Keyword2 -> BedroomsTotal, etc.) so
+// active-listing rows and california_sold rows (SoldRow) share one vocabulary.
 export interface ListingRow {
-  L_ListingID: string;
+  ListingKey: string;
   L_DisplayId: string;
-  L_Address: string;
-  L_City: string;
-  L_Zip: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqft: number;
-  type: string;
-  status: string;
-  lat: number;
-  lng: number;
+  UnparsedAddress: string;
+  City: string;
+  PostalCode: string;
+  ListPrice: number;
+  BedroomsTotal: number;
+  BathroomsTotalInteger: number;
+  LivingArea: number;
+  PropertySubType: string;
+  MlsStatus: string;
+  Latitude: number;
+  Longitude: number;
   YearBuilt: number;
   AssociationFee: number;
   DaysOnMarket: number;
   PoolPrivateYN: string;
   ViewYN: string;
   FireplaceYN: string;
-  PhotoCount: number;
-  LA1_UserFirstName: string;
-  LA1_UserLastName: string;
-  LO1_OrganizationName: string;
+  PhotosCount: number;
+  ListAgentFirstName: string;
+  ListAgentLastName: string;
+  ListOfficeName: string;
 }
 
 export interface SoldRow {
