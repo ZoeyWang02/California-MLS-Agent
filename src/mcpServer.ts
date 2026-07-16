@@ -21,6 +21,7 @@ const { McpServer } = await import("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
 const { z } = await import("zod");
 const { propertySearchSkill } = await import("./skills/propertySearchSkill.js");
+const { conversationalPropertySearchSkill } = await import("./skills/conversationalPropertySearchSkill.js");
 const { getSoldComps } = await import("./tools/getSoldComps.js");
 
 const server = new McpServer({
@@ -48,6 +49,29 @@ server.registerTool(
         ? `No active listings matched: ${JSON.stringify(result.filters)}`
         : result.cards.join("\n\n");
     return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "conversational_property_search",
+  {
+    title: "Multi-turn property search",
+    description:
+      "Continue a multi-turn property search conversation with one specific user. Remembers city, budget, " +
+      "beds, baths, type, pool, and view across earlier turns for that user, asks for whatever is still " +
+      "missing (city, then budget) before searching, and re-runs the search as more criteria come in. " +
+      "IMPORTANT: always pass the sender's stable chat identifier (their WhatsApp phone number, exactly as " +
+      "seen in this conversation, e.g. '12176077987') as userId, using the SAME value on every turn with this " +
+      "user - this is how their progress is kept separate from other users. Use this tool (not property_search) " +
+      "whenever a user is searching for or refining a home search across multiple messages.",
+    inputSchema: {
+      userId: z.string().describe("Sender's stable chat identifier (e.g. phone number), same value every turn"),
+      message: z.string().describe("The user's latest message, verbatim"),
+    },
+  },
+  async ({ userId, message }: { userId: string; message: string }) => {
+    const result = await conversationalPropertySearchSkill(userId, message);
+    return { content: [{ type: "text" as const, text: result.reply }] };
   }
 );
 
