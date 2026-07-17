@@ -13,7 +13,7 @@ These solve different problems:
 
 ## A measured deviation from the handbook
 
-The handbook's `Map<string, UserSession>` example assumes the process handling messages stays alive between turns (that's really Week 10's architecture — your own long-running `onWhatsAppMessage` server). We measured our actual setup instead of assuming it matched: this code runs as an MCP server that OpenClaw spawns, and two separate `openclaw agent` turns came back with **different process PIDs** — the process does not persist between messages. A plain in-memory `Map` would silently lose all session state between turns.
+The handbook's `Map<string, UserSession>` example assumes the process handling messages stays alive between turns. We measured our actual setup instead of assuming it matched: this code runs as an MCP server that OpenClaw spawns, and two separate `openclaw agent` turns came back with **different process PIDs** — the process does not persist between messages. A plain in-memory `Map` would silently lose all session state between turns.
 
 [`src/session.ts`](../src/session.ts) persists sessions to `data/sessions.json` (gitignored) instead, keyed by `userId`, so state survives regardless of process lifetime. `updateSession` merges only defined fields from each turn's parsed filters, so a turn that doesn't mention a city (e.g. "under 1.2 million") doesn't erase a city captured earlier.
 

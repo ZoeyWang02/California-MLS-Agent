@@ -33,19 +33,20 @@ test("formats a full listing into a two-line card", () => {
   const card = formatPropertyCard(baseListing);
   assert.equal(
     card,
-    "123 Main St, Irvine — $1,250,000\n3bd/2ba | 1,800 sqft | 12 days on market"
+    "123 Main St, Irvine — $1,250,000\n3bd/2ba | 1,800 sqft | 12 days on market | 24 photos"
   );
 });
 
-test("falls back gracefully when price and sqft are missing", () => {
+test("falls back gracefully when price, sqft, and photos are missing", () => {
   const card = formatPropertyCard({
     ...baseListing,
     ListPrice: 0,
     LivingArea: 0,
     DaysOnMarket: 0,
+    PhotosCount: 0,
   });
   assert.equal(
     card,
-    "123 Main St, Irvine — Price on request\n3bd/2ba | sqft n/a | 0 days on market"
+    "123 Main St, Irvine — Price on request\n3bd/2ba | sqft n/a | 0 days on market | 0 photos"
   );
 });
