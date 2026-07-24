@@ -23,6 +23,8 @@ const { z } = await import("zod");
 const { propertySearchSkill } = await import("./skills/propertySearchSkill.js");
 const { conversationalPropertySearchSkill } = await import("./skills/conversationalPropertySearchSkill.js");
 const { getSoldComps } = await import("./tools/getSoldComps.js");
+const { getCityMarketSummary } = await import("./tools/getMarketStats.js");
+const { getPriceTrend } = await import("./tools/getPriceTrend.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -99,6 +101,56 @@ server.registerTool(
       )
       .join("\n");
     return { content: [{ type: "text" as const, text: `${comps.length} comps found. Showing up to 10:\n\n${text}` }] };
+  }
+);
+
+server.registerTool(
+  "market_stats",
+  {
+    title: "City market summary",
+    description:
+      "Top 25 California cities by sold volume over the trailing 12 months, from california_sold: " +
+      "sold count, average close price, average price per sqft, average days on market, and list-to-close ratio.",
+    inputSchema: {},
+  },
+  async () => {
+    const rows = await getCityMarketSummary();
+    const text = rows
+      .map(
+        (r) =>
+          `${r.City}: ${r.sold_count} sold, avg $${Number(r.avg_close_price).toLocaleString()}, ` +
+          `$${r.avg_price_per_sqft}/sqft, ${r.avg_dom} avg DOM, ${r.list_to_close_pct}% list-to-close`
+      )
+      .join("\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "price_trend",
+  {
+    title: "Monthly price trend for a city",
+    description:
+      "Month-by-month sold count, average close price, average days on market, and month-over-month " +
+      "price change percentage for a city, from california_sold.",
+    inputSchema: {
+      city: z.string().describe("City name, e.g. 'San Diego'"),
+      months: z.number().int().min(1).max(60).optional().describe("Trailing months of history, defaults to 24"),
+    },
+  },
+  async ({ city, months }: { city: string; months?: number }) => {
+    const rows = await getPriceTrend(city, months ?? 24);
+    if (rows.length === 0) {
+      return { content: [{ type: "text" as const, text: `No sold data found for ${city}.` }] };
+    }
+    const text = rows
+      .map(
+        (r) =>
+          `${r.month}: ${r.sales} sold, avg $${r.avg_price.toLocaleString()}, ${r.avg_dom} avg DOM` +
+          (r.price_change_pct === null ? "" : ` (${r.price_change_pct >= 0 ? "+" : ""}${r.price_change_pct.toFixed(1)}% MoM)`)
+      )
+      .join("\n");
+    return { content: [{ type: "text" as const, text }] };
   }
 );
 
