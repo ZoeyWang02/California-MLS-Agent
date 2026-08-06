@@ -2,13 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { UserSession } from "./types.js";
 
-// Handbook's Week 4 example keeps sessions in a plain in-memory Map, which
-// assumes the process handling messages stays alive between turns. Measured
-// against our actual setup (this code runs as an MCP server spawned by
-// OpenClaw), that assumption doesn't hold - a fresh process can be spawned
-// per turn, which would silently wipe an in-memory Map between messages.
-// Persisting to disk keeps sessions correct regardless of process lifetime.
-
 type SessionStore = Record<string, UserSession>;
 
 const DEFAULT_SESSIONS_PATH = "data/sessions.json";

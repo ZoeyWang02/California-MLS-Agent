@@ -23,6 +23,9 @@ const { z } = await import("zod");
 const { propertySearchSkill } = await import("./skills/propertySearchSkill.js");
 const { conversationalPropertySearchSkill } = await import("./skills/conversationalPropertySearchSkill.js");
 const { getSoldComps } = await import("./tools/getSoldComps.js");
+const { getCityMarketSummary } = await import("./tools/getMarketStats.js");
+const { getPriceTrend } = await import("./tools/getPriceTrend.js");
+const { semanticPropertySearch } = await import("./tools/semanticPropertySearch.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -99,6 +102,89 @@ server.registerTool(
       )
       .join("\n");
     return { content: [{ type: "text" as const, text: `${comps.length} comps found. Showing up to 10:\n\n${text}` }] };
+  }
+);
+
+server.registerTool(
+  "market_stats",
+  {
+    title: "City market summary",
+    description:
+      "Top 25 California cities by sold volume over the trailing 12 months, from california_sold: " +
+      "sold count, average and median close price, average price per sqft, average days on market, " +
+      "and list-to-close ratio.",
+    inputSchema: {},
+  },
+  async () => {
+    const rows = await getCityMarketSummary();
+    const text = rows
+      .map(
+        (r) =>
+          `${r.City}: ${r.sold_count} sold, avg $${Number(r.avg_close_price).toLocaleString()}, ` +
+          `median $${Number(r.median_close_price).toLocaleString()}, ` +
+          `$${r.avg_price_per_sqft}/sqft, ${r.avg_dom} avg DOM, ${r.list_to_close_pct}% list-to-close`
+      )
+      .join("\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "price_trend",
+  {
+    title: "Monthly price trend for a city",
+    description:
+      "Month-by-month sold count, average close price, average days on market, and month-over-month " +
+      "price change percentage for a city, from california_sold.",
+    inputSchema: {
+      city: z.string().describe("City name, e.g. 'San Diego'"),
+      months: z.number().int().min(1).max(60).optional().describe("Trailing months of history, defaults to 24"),
+    },
+  },
+  async ({ city, months }: { city: string; months?: number }) => {
+    const rows = await getPriceTrend(city, months ?? 24);
+    if (rows.length === 0) {
+      return { content: [{ type: "text" as const, text: `No sold data found for ${city}.` }] };
+    }
+    const text = rows
+      .map(
+        (r) =>
+          `${r.month}: ${r.sales} sold, avg $${r.avg_price.toLocaleString()}, ${r.avg_dom} avg DOM` +
+          (r.price_change_pct === null ? "" : ` (${r.price_change_pct >= 0 ? "+" : ""}${r.price_change_pct.toFixed(1)}% MoM)`)
+      )
+      .join("\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "semantic_property_search",
+  {
+    title: "Semantic property search",
+    description:
+      "Find active rets_property listings that semantically match a free-text description (e.g. 'charming " +
+      "craftsman with mountain views and character'), using OpenAI embeddings + cosine similarity over " +
+      "listing remarks - not keyword matching. Slower and costs a small amount of OpenAI usage per call; " +
+      "prefer property_search for straightforward filter-style queries (city/price/beds/etc).",
+    inputSchema: {
+      query: z.string().describe("Free-text description of the desired property, style, or feel"),
+      city: z.string().optional().describe("Optional city to narrow the candidate pool before embedding"),
+      candidateLimit: z.number().int().min(1).max(200).optional().describe("Active listings to embed and compare against, defaults to 50"),
+    },
+  },
+  async ({ query, city, candidateLimit }: { query: string; city?: string; candidateLimit?: number }) => {
+    const results = await semanticPropertySearch(query, city, candidateLimit ?? 50);
+    if (results.length === 0) {
+      return { content: [{ type: "text" as const, text: "No matching active listings found." }] };
+    }
+    const text = results
+      .map(
+        (r) =>
+          `${r.L_Type_} in ${r.L_City} — $${Number(r.L_SystemPrice).toLocaleString()}, ` +
+          `${r.L_Keyword2}bd/${r.LM_Dec_3}ba, ${r.LM_Int2_3} sqft, built ${r.YearBuilt}\n${(r.L_Remarks || "").slice(0, 200)}`
+      )
+      .join("\n\n");
+    return { content: [{ type: "text" as const, text }] };
   }
 );
 
