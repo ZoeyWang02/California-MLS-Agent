@@ -26,6 +26,7 @@ const { getSoldComps } = await import("./tools/getSoldComps.js");
 const { getCityMarketSummary } = await import("./tools/getMarketStats.js");
 const { getPriceTrend } = await import("./tools/getPriceTrend.js");
 const { semanticPropertySearch } = await import("./tools/semanticPropertySearch.js");
+const { recommendSimilarListings } = await import("./tools/recommendListings.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -183,6 +184,39 @@ server.registerTool(
           `${r.L_Type_} in ${r.L_City} — $${Number(r.L_SystemPrice).toLocaleString()}, ` +
           `${r.L_Keyword2}bd/${r.LM_Dec_3}ba, ${r.LM_Int2_3} sqft, built ${r.YearBuilt}\n${(r.L_Remarks || "").slice(0, 200)}`
       )
+      .join("\n\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "recommend_similar_listings",
+  {
+    title: "Recommend similar listings",
+    description:
+      "Given an active rets_property listing ID the user liked, surface the top similar active listings " +
+      "using a hybrid score (60% structured similarity - price/beds/city/sqft, 40% embedding similarity " +
+      "of remarks), each with a comp-validated price assessment sourced from california_sold.",
+    inputSchema: {
+      targetListingId: z.string().describe("L_ListingID of the active listing the user liked"),
+      topK: z.number().int().min(1).max(20).optional().describe("Number of recommendations to return, defaults to 5"),
+    },
+  },
+  async ({ targetListingId, topK }: { targetListingId: string; topK?: number }) => {
+    const results = await recommendSimilarListings(targetListingId, topK ?? 5);
+    if (results.length === 0) {
+      return { content: [{ type: "text" as const, text: "No similar active listings found." }] };
+    }
+    const text = results
+      .map((r) => {
+        const c = r.comp_validation;
+        const delta = c.delta_pct === null ? "no comps" : `${c.delta_pct >= 0 ? "+" : ""}${c.delta_pct}% vs comps`;
+        return (
+          `${r.L_Type_} in ${r.L_City} — $${Number(r.L_SystemPrice).toLocaleString()} (score: ${r.score}), ` +
+          `${r.L_Keyword2}bd/${r.LM_Dec_3}ba, ${r.LM_Int2_3} sqft\n` +
+          `Comp check: $${c.comp_price.toLocaleString()} comp price from ${c.comp_count} comps (${delta})`
+        );
+      })
       .join("\n\n");
     return { content: [{ type: "text" as const, text }] };
   }
