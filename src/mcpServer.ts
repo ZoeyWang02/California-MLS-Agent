@@ -25,6 +25,7 @@ const { conversationalPropertySearchSkill } = await import("./skills/conversatio
 const { getSoldComps } = await import("./tools/getSoldComps.js");
 const { getCityMarketSummary } = await import("./tools/getMarketStats.js");
 const { getPriceTrend } = await import("./tools/getPriceTrend.js");
+const { semanticPropertySearch } = await import("./tools/semanticPropertySearch.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -152,6 +153,37 @@ server.registerTool(
           (r.price_change_pct === null ? "" : ` (${r.price_change_pct >= 0 ? "+" : ""}${r.price_change_pct.toFixed(1)}% MoM)`)
       )
       .join("\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "semantic_property_search",
+  {
+    title: "Semantic property search",
+    description:
+      "Find active rets_property listings that semantically match a free-text description (e.g. 'charming " +
+      "craftsman with mountain views and character'), using OpenAI embeddings + cosine similarity over " +
+      "listing remarks - not keyword matching. Slower and costs a small amount of OpenAI usage per call; " +
+      "prefer property_search for straightforward filter-style queries (city/price/beds/etc).",
+    inputSchema: {
+      query: z.string().describe("Free-text description of the desired property, style, or feel"),
+      city: z.string().optional().describe("Optional city to narrow the candidate pool before embedding"),
+      candidateLimit: z.number().int().min(1).max(200).optional().describe("Active listings to embed and compare against, defaults to 50"),
+    },
+  },
+  async ({ query, city, candidateLimit }: { query: string; city?: string; candidateLimit?: number }) => {
+    const results = await semanticPropertySearch(query, city, candidateLimit ?? 50);
+    if (results.length === 0) {
+      return { content: [{ type: "text" as const, text: "No matching active listings found." }] };
+    }
+    const text = results
+      .map(
+        (r) =>
+          `${r.L_Type_} in ${r.L_City} — $${Number(r.L_SystemPrice).toLocaleString()}, ` +
+          `${r.L_Keyword2}bd/${r.LM_Dec_3}ba, ${r.LM_Int2_3} sqft, built ${r.YearBuilt}\n${(r.L_Remarks || "").slice(0, 200)}`
+      )
+      .join("\n\n");
     return { content: [{ type: "text" as const, text }] };
   }
 );

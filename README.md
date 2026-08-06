@@ -10,12 +10,13 @@ Internship project for building an OpenClaw-based multi-agent real estate assist
 - [Week 3 Database Integration](docs/week3_database_integration.md)
 - [Week 4 Conversational Agent](docs/week4_conversational_agent.md)
 - [Week 5 Market Statistics](docs/week5_market_stats.md)
+- [Week 6 Embeddings & Vector Search](docs/week6_embeddings.md)
 
 ## Week 1 Code
 
 Week 1's deliverable is architecture documentation only (see `docs/`); no code is required for that week.
 
-## Week 2-5 Code (TypeScript per OpenClaw, Python for Week 5 trend analysis)
+## Week 2-6 Code (TypeScript per OpenClaw, Python for Week 5/6 pandas/OpenAI work)
 
 - `src/nlp/parsePropertyQuery.ts`: Week 2 natural-language property filter parser
 - `src/db.ts`: MySQL connection pool (`mysql2/promise`)
@@ -28,6 +29,8 @@ Week 1's deliverable is architecture documentation only (see `docs/`); no code i
 - `src/tools/getMarketStats.ts`: Week 5 city market summary (SQL aggregation)
 - `python/market_trend.py`: Week 5 monthly price trend analysis (pandas/SQLAlchemy, per handbook)
 - `src/tools/getPriceTrend.ts`: Week 5 Node wrapper that runs `market_trend.py` and parses its output
+- `python/embeddings.py`: Week 6 OpenAI embeddings + cosine similarity semantic search (per handbook) - **not yet live-tested against the real OpenAI API, see the Week 6 doc**
+- `src/tools/semanticPropertySearch.ts`: Week 6 Node wrapper that runs `embeddings.py` and parses its output
 - `src/mcpServer.ts`: MCP server exposing these skills as tools to OpenClaw
 - `src/types.ts`: shared `PropertyFilters` / `ListingRow` / `SoldRow` / `UserSession` types
 
@@ -38,10 +41,10 @@ npm install
 npm test
 ```
 
-The Week 5 price-trend tool additionally requires the Python venv from Week 0 (`pandas`, `sqlalchemy`, `mysql-connector-python` - see `requirements.txt`).
+The Week 5 price-trend and Week 6 embeddings tools additionally require the Python venv from Week 0 (`pandas`, `sqlalchemy`, `mysql-connector-python`, `openai`, `scikit-learn`, `numpy` - see `requirements.txt`).
 
 ## Current Setup Notes
 
 - MySQL schema: `idx_exchange`
 - Expected MLS tables: `rets_property` for active listings and `california_sold` for sold comps
-- OpenAI API key is still pending from the project owner
+- OpenAI API key is configured in `.env` (used starting Week 6)
