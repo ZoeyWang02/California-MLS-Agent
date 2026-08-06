@@ -29,8 +29,8 @@ Both tools tested directly (`python/market_trend.py` run standalone against the 
 
 ```
 market_stats:
-San Diego: 4158 sold, avg $1,152,573, $720/sqft, 30.3 avg DOM, 99.4% list-to-close
-Los Angeles: 3709 sold, avg $1,599,377, $794/sqft, 46.9 avg DOM, 99.7% list-to-close
+San Diego: 4158 sold, avg $1,152,573, median $925,000, $720/sqft, 30.3 avg DOM, 99.4% list-to-close
+Los Angeles: 3709 sold, avg $1,599,377, median $1,125,000, $794/sqft, 46.9 avg DOM, 99.7% list-to-close
 ...
 
 price_trend (San Diego, 6mo):
@@ -39,9 +39,9 @@ price_trend (San Diego, 6mo):
 ...
 ```
 
-## A gap in the handbook's own deliverable text
+## Median price
 
-The Week 5 deliverable text says the skill should report "median price," but the handbook's own SQL only computes `AVG(ClosePrice)`, not a median (MySQL has no built-in `MEDIAN()`; it would need a window-function workaround). Implemented exactly what the handbook's code does (average, not median) rather than adding something it didn't ask for in code.
+The Week 5 deliverable text asks for "median price," but the handbook's own SQL only computes `AVG(ClosePrice)` - MySQL has no built-in `MEDIAN()`. Added it to `getCityMarketSummary()` using the standard window-function workaround: rank each city's sold rows by `ClosePrice` with `ROW_NUMBER() OVER (PARTITION BY City ORDER BY ClosePrice)`, then average the one (odd count) or two (even count) middle-ranked rows. Verified sensible against real data - `median_close_price` comes out lower than `avg_close_price` for every city (e.g. San Diego: avg $1,152,573 vs median $925,000), matching the expected right-skew of home prices (a few high-end sales pull the average up).
 
 ## Tests
 

@@ -110,7 +110,8 @@ server.registerTool(
     title: "City market summary",
     description:
       "Top 25 California cities by sold volume over the trailing 12 months, from california_sold: " +
-      "sold count, average close price, average price per sqft, average days on market, and list-to-close ratio.",
+      "sold count, average and median close price, average price per sqft, average days on market, " +
+      "and list-to-close ratio.",
     inputSchema: {},
   },
   async () => {
@@ -119,6 +120,7 @@ server.registerTool(
       .map(
         (r) =>
           `${r.City}: ${r.sold_count} sold, avg $${Number(r.avg_close_price).toLocaleString()}, ` +
+          `median $${Number(r.median_close_price).toLocaleString()}, ` +
           `$${r.avg_price_per_sqft}/sqft, ${r.avg_dom} avg DOM, ${r.list_to_close_pct}% list-to-close`
       )
       .join("\n");
