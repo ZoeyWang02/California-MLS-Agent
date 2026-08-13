@@ -12,12 +12,13 @@ Internship project for building an OpenClaw-based multi-agent real estate assist
 - [Week 5 Market Statistics](docs/week5_market_stats.md)
 - [Week 6 Embeddings & Vector Search](docs/week6_embeddings.md)
 - [Week 7 Recommendation Engine](docs/week7_recommendation_engine.md)
+- [Week 8 RAG](docs/week8_rag.md)
 
 ## Week 1 Code
 
 Week 1's deliverable is architecture documentation only (see `docs/`); no code is required for that week.
 
-## Week 2-7 Code (TypeScript per OpenClaw, Python for Week 5-7 pandas/OpenAI work)
+## Week 2-8 Code (TypeScript per OpenClaw, Python for Week 5-8 pandas/OpenAI work)
 
 - `src/nlp/parsePropertyQuery.ts`: Week 2 natural-language property filter parser
 - `src/db.ts`: MySQL connection pool (`mysql2/promise`)
@@ -34,6 +35,9 @@ Week 1's deliverable is architecture documentation only (see `docs/`); no code i
 - `src/tools/semanticPropertySearch.ts`: Week 6 Node wrapper that runs `embeddings.py` and parses its output
 - `python/recommendations.py`: Week 7 hybrid recommendation scoring + comp validation (per handbook), verified live
 - `src/tools/recommendListings.ts`: Week 7 Node wrapper that runs `recommendations.py` and parses its output
+- `knowledge/*.md`: Week 8 RAG knowledge base - Real Estate Data Analyst Primer, Trestle RESO field definitions (california_sold + rets_property overlap), handbook schema reference (rets_property legacy fields), Week 5 market snapshot
+- `python/rag.py`: Week 8 chunk/index/retrieve/generate RAG pipeline (per handbook), verified live
+- `src/tools/ragAnswer.ts`: Week 8 Node wrapper that runs `rag.py` and parses its output
 - `src/mcpServer.ts`: MCP server exposing these skills as tools to OpenClaw
 - `src/types.ts`: shared `PropertyFilters` / `ListingRow` / `SoldRow` / `UserSession` types
 
@@ -44,7 +48,7 @@ npm install
 npm test
 ```
 
-The Week 5-7 Python tools additionally require the venv from Week 0 (`pandas`, `sqlalchemy`, `mysql-connector-python`, `openai`, `scikit-learn`, `numpy` - see `requirements.txt`).
+The Week 5-8 Python tools additionally require the venv from Week 0 (`pandas`, `sqlalchemy`, `mysql-connector-python`, `openai`, `scikit-learn`, `numpy` - see `requirements.txt`).
 
 ## Current Setup Notes
 
