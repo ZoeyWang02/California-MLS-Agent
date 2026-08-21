@@ -1,10 +1,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-// Load .env from the current working directory (the process is always
-// started with --cwd set to the project root) without ever printing it.
-// This must run before importing anything that touches db.ts, since that
-// module creates its MySQL pool from process.env at import time.
+
 const envPath = join(process.cwd(), ".env");
 if (existsSync(envPath)) {
   for (const line of readFileSync(envPath, "utf8").split("\n")) {
@@ -28,6 +25,7 @@ const { getPriceTrend } = await import("./tools/getPriceTrend.js");
 const { semanticPropertySearch } = await import("./tools/semanticPropertySearch.js");
 const { recommendSimilarListings } = await import("./tools/recommendListings.js");
 const { ragAnswer } = await import("./tools/ragAnswer.js");
+const { orchestrate } = await import("./skills/orchestrator.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -241,6 +239,28 @@ server.registerTool(
     const result = await ragAnswer(question);
     const text = `${result.answer}\n\n(sources: ${result.sources.join(", ")})`;
     return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "orchestrate_query",
+  {
+    title: "Multi-agent orchestrator",
+    description:
+      "Week 9: a single entry point that classifies a query's intent (search, market, recommend, " +
+      "knowledge, or mixed) and routes it to the right specialized agent(s) - propertySearchAgent, " +
+      "marketStatsAgent, recommendationAgent, or ragAgent, or a parallel combination of the first two " +
+      "for mixed-intent queries. Prefer this over calling an individual tool directly when the query's " +
+      "intent isn't already obvious, or when it asks for more than one kind of thing at once " +
+      "(e.g. 'find affordable homes in X and tell me if prices are rising').",
+    inputSchema: {
+      query: z.string().describe("The user's free-text query"),
+      userId: z.string().describe("Sender's stable chat identifier (e.g. phone number), same value every turn"),
+    },
+  },
+  async ({ query, userId }: { query: string; userId: string }) => {
+    const result = await orchestrate(query, userId);
+    return { content: [{ type: "text" as const, text: result.response }] };
   }
 );
 

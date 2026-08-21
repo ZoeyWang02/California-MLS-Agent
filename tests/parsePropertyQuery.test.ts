@@ -92,3 +92,8 @@ test("word-form thousand suffix", () => {
   assert.equal(f.city, "Fresno");
   assert.equal(f.maxPrice, 650_000);
 });
+
+test("city followed by 'and' clause and trailing period (Week 9 mixed-intent example)", () => {
+  const f = parsePropertyQuery("Find me affordable homes in Pasadena and tell me whether prices are rising.");
+  assert.equal(f.city, "Pasadena");
+});

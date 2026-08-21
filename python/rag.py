@@ -28,13 +28,6 @@ INDEX_CACHE_PATH = Path("knowledge/.index_cache.json")
 
 
 def chunk_text(text: str, chunk_size: int = 6000, overlap: int = 300) -> list[str]:
-    # The handbook's example defaults are 600/100. Tested against this
-    # project's actual knowledge/*.md files, 600 split a single reference
-    # table across multiple chunks, so retrieve(top_k=4) often missed part
-    # of the table and produced incomplete answers. Raised progressively
-    # (2500, then 6000 once the real Trestle-sourced field table grew past
-    # 5000 chars) so each reference table fits in a single chunk; verified
-    # live that this produces the complete column list.
     chunks, start = [], 0
     while start < len(text):
         end = min(start + chunk_size, len(text))
@@ -67,13 +60,6 @@ def retrieve(query: str, index: list[dict], top_k: int = 4) -> list[dict]:
 
 def rag_answer(query: str, index: list[dict]) -> str:
     chunks = retrieve(query, index)
-    # Labeling each chunk with its source doc, and telling the model not to
-    # merge different sources, fixed a real bug found while testing: with
-    # this project's small, topically-similar knowledge base (two reference
-    # tables both formatted as "Column | Type | Description"), retrieve()
-    # sometimes pulls chunks from two different docs, and an unlabeled
-    # prompt let the model silently merge rets_property's columns into a
-    # "california_sold columns" answer.
     context = "\n\n".join(f"[Source: {c['source']}]\n{c['chunk']}" for c in chunks)
     prompt = (
         "Answer using only the context below. The context may include multiple different "

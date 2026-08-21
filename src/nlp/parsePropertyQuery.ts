@@ -15,7 +15,8 @@ const TYPE_MAP: Record<string, string> = {
 };
 
 export function parsePropertyQuery(query: string): PropertyFilters {
-  const cityMatch = query.match(/in ([A-Za-z\s]+?)(?:\s+under|\s+with|\s+at|\s+below|$)/i);
+
+  const cityMatch = query.match(/in ([A-Za-z\s]+?)(?:[.,!?]|\s+and\b|\s+under|\s+with|\s+at|\s+below|$)/i);
   const priceMatch = query.match(/under \$?([\d,.]+)\s*(thousand|million|k|m)?/i);
   const bedsMatch = query.match(/(\d+)[\s-]*(bed|beds|bedroom|bedrooms)/i);
   const bathsMatch = query.match(/(\d+(?:\.5)?)[\s-]*(bath|baths|bathroom)/i);
