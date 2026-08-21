@@ -27,6 +27,7 @@ const { getCityMarketSummary } = await import("./tools/getMarketStats.js");
 const { getPriceTrend } = await import("./tools/getPriceTrend.js");
 const { semanticPropertySearch } = await import("./tools/semanticPropertySearch.js");
 const { recommendSimilarListings } = await import("./tools/recommendListings.js");
+const { ragAnswer } = await import("./tools/ragAnswer.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -218,6 +219,27 @@ server.registerTool(
         );
       })
       .join("\n\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "rag_answer",
+  {
+    title: "Answer a knowledge question",
+    description:
+      "Answer a question about real estate concepts, MLS field definitions, or market terminology, " +
+      "grounded in this project's indexed knowledge documents (MLS field definitions for both tables, " +
+      "a real estate glossary, CA disclosure requirements, and a market report snapshot) - not general " +
+      "knowledge or guessing. Use for definitional/reference questions like 'what does DOM mean?' or " +
+      "'what columns are in california_sold?', not for live property search or market stats.",
+    inputSchema: {
+      question: z.string().describe("The knowledge question to answer"),
+    },
+  },
+  async ({ question }: { question: string }) => {
+    const result = await ragAnswer(question);
+    const text = `${result.answer}\n\n(sources: ${result.sources.join(", ")})`;
     return { content: [{ type: "text" as const, text }] };
   }
 );
