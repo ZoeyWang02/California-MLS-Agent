@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPropertyCard } from "../src/tools/formatPropertyCard.js";
+import { formatPropertyCard, formatPropertyCardForWhatsApp } from "../src/tools/formatPropertyCard.js";
 import type { ListingRow } from "../src/types.js";
 
 const baseListing: ListingRow = {
@@ -48,5 +48,13 @@ test("falls back gracefully when price, sqft, and photos are missing", () => {
   assert.equal(
     card,
     "123 Main St, Irvine — Price on request\n3bd/2ba | sqft n/a | 0 days on market | 0 photos"
+  );
+});
+
+test("formats a listing into the Week 10 WhatsApp emoji card", () => {
+  const card = formatPropertyCardForWhatsApp(baseListing);
+  assert.equal(
+    card,
+    "🏠 *123 Main St, Irvine*\n   💰 $1,250,000 | 🛏 3bd/2ba | 📐 1,800 sqft\n   📅 12 days on market"
   );
 });

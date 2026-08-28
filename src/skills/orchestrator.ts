@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { conversationalPropertySearchSkill } from "./conversationalPropertySearchSkill.js";
+import { formatPropertyCardForWhatsApp } from "../tools/formatPropertyCard.js";
 import { getCityMarketSummary } from "../tools/getMarketStats.js";
 import { getPriceTrend } from "../tools/getPriceTrend.js";
 import { recommendSimilarListings } from "../tools/recommendListings.js";
@@ -45,7 +46,7 @@ export async function classifyIntent(query: string): Promise<Intent> {
 }
 
 async function propertySearchAgent(query: string, userId: string): Promise<AgentResult> {
-  const result = await conversationalPropertySearchSkill(userId, query);
+  const result = await conversationalPropertySearchSkill(userId, query, formatPropertyCardForWhatsApp);
   return { response: result.reply };
 }
 

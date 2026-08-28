@@ -25,10 +25,9 @@ after(() => {
   clearSession(TEST_USER);
 });
 
-test("routeIntent('search', ...) returns active listings for a fully-specified query", async () => {
+test("routeIntent('search', ...) returns Week 10 emoji-formatted listings for a fully-specified query", async () => {
   const result = await routeIntent("search", "find homes in Irvine under 900k", TEST_USER);
-  assert.equal(typeof result.response, "string");
-  assert.ok(result.response.length > 0);
+  assert.match(result.response, /🏠/);
 });
 
 test("routeIntent('market', ...) returns a per-city price trend when a city is named", async () => {
@@ -54,6 +53,8 @@ test("routeIntent('mixed', ...) combines search and market results", async () =>
 });
 
 test("routeIntent falls back to the default response for an unrecognized intent", async () => {
+  // @ts-expect-error - deliberately passing an intent outside the union to
+  // exercise the handbook's default branch.
   const result = await routeIntent("banana", "whatever", "any-user");
   assert.match(result.response, /not sure how to help/);
 });

@@ -2,7 +2,7 @@ import { parsePropertyQuery } from "../nlp/parsePropertyQuery.js";
 import { searchActiveListings } from "../tools/searchActiveListings.js";
 import { formatPropertyCard } from "../tools/formatPropertyCard.js";
 import { getSession, updateSession } from "../session.js";
-import type { UserSession } from "../types.js";
+import type { ListingRow, UserSession } from "../types.js";
 
 export interface ConversationalSearchResult {
   reply: string;
@@ -16,7 +16,8 @@ export interface ConversationalSearchResult {
 // not the LLM re-inferring state from raw chat history each turn.
 export async function conversationalPropertySearchSkill(
   userId: string,
-  message: string
+  message: string,
+  cardFormatter: (listing: ListingRow) => string = formatPropertyCard
 ): Promise<ConversationalSearchResult> {
   const parsed = parsePropertyQuery(message);
   const current = getSession(userId);
@@ -60,5 +61,5 @@ export async function conversationalPropertySearchSkill(
     };
   }
 
-  return { reply: listings.map(formatPropertyCard).join("\n\n"), awaitingInput: false, session };
+  return { reply: listings.map(cardFormatter).join("\n\n"), awaitingInput: false, session };
 }
