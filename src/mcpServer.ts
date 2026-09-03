@@ -26,6 +26,7 @@ const { semanticPropertySearch } = await import("./tools/semanticPropertySearch.
 const { recommendSimilarListings } = await import("./tools/recommendListings.js");
 const { ragAnswer } = await import("./tools/ragAnswer.js");
 const { orchestrate } = await import("./skills/orchestrator.js");
+const { draftEmail, sendApprovedEmail, buildWeeklyMarketReportBody } = await import("./tools/email.js");
 
 const server = new McpServer({
   name: "california-mls-agent",
@@ -261,6 +262,71 @@ server.registerTool(
   async ({ query, userId }: { query: string; userId: string }) => {
     const result = await orchestrate(query, userId);
     return { content: [{ type: "text" as const, text: result.response }] };
+  }
+);
+
+server.registerTool(
+  "draft_email",
+  {
+    title: "Draft an email (never sends)",
+    description:
+      "Create an email draft (listing alert, property summary, recommendation digest, or any other outbound " +
+      "email) for the user to review. This ONLY creates a draft and returns it for preview - it never sends " +
+      "anything. Show the full draft (to/subject/body) to the user and wait for them to explicitly confirm " +
+      "before ever calling send_approved_email. Never treat silence, a vague reaction, or an unrelated reply " +
+      "as approval.",
+    inputSchema: {
+      to: z.string().describe("Recipient email address"),
+      subject: z.string().describe("Email subject line"),
+      body: z.string().describe("Email body (HTML)"),
+    },
+  },
+  async ({ to, subject, body }: { to: string; subject: string; body: string }) => {
+    const result = await draftEmail(to, subject, body);
+    const text = `DRAFT (${result.status}):\nTo: ${result.draft.to}\nSubject: ${result.draft.subject}\n\n${result.draft.body}`;
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "draft_weekly_market_report",
+  {
+    title: "Draft a weekly market report email (never sends)",
+    description:
+      "Build a weekly market report email (top California cities from california_sold: sold volume, average " +
+      "and median price, days on market, list-to-close ratio) and return it as a draft for the given " +
+      "recipient. Never sends anything - same approval requirement as draft_email.",
+    inputSchema: {
+      to: z.string().describe("Recipient email address"),
+    },
+  },
+  async ({ to }: { to: string }) => {
+    const body = await buildWeeklyMarketReportBody();
+    const result = await draftEmail(to, "Weekly California Market Report", body);
+    const text = `DRAFT (${result.status}):\nTo: ${result.draft.to}\nSubject: ${result.draft.subject}\n\n${result.draft.body}`;
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.registerTool(
+  "send_approved_email",
+  {
+    title: "Send a previously-drafted email",
+    description:
+      "Send an email that was already shown to the user via draft_email or draft_weekly_market_report. " +
+      "ONLY call this after the user has explicitly confirmed in a separate message (e.g. 'yes, send it', " +
+      "'approved', 'go ahead') - never in the same turn you showed them the draft, and never based on an " +
+      "inferred or assumed approval. If there is any doubt whether the user approved, ask again instead of " +
+      "calling this tool. Pass back the exact to/subject/body from the draft you showed them, unmodified.",
+    inputSchema: {
+      to: z.string().describe("Recipient email address, exactly as shown in the approved draft"),
+      subject: z.string().describe("Email subject, exactly as shown in the approved draft"),
+      body: z.string().describe("Email body (HTML), exactly as shown in the approved draft"),
+    },
+  },
+  async ({ to, subject, body }: { to: string; subject: string; body: string }) => {
+    await sendApprovedEmail({ to, subject, body });
+    return { content: [{ type: "text" as const, text: `Sent to ${to}.` }] };
   }
 );
 
